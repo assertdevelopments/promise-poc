@@ -9,7 +9,7 @@ The results of this experiment will be summarised in an article that will form t
 
 # Building
 
-To build this project, you will need Maven 3 (or higher) and JDK 1.8.
+To build this project, you will need Maven 3 (or higher) and JDK 1.6.
 
 Run the following command:
 
