@@ -4,7 +4,7 @@ Welcome to Promise POC!
 
 With this experiment, we will try to expose a missed opportunity in the architecture of JAX-RS. I will use it to discover why certain design decisions were made and why things were built the way they are.
 
-The results of this experiment will be summarised in an article, and will form the foundations of Promise, a framework that adds advanced streaming capabilities to JAX-RS. Its goal is to lower memory and response time and to provide error handling.
+The results of this experiment will be summarised in an article, and will form the foundations of Promise, a framework that adds advanced streaming capabilities to JAX-RS. Its goal is to lower memory consumption and response time and to provide error handling.
 
 
 # Building
