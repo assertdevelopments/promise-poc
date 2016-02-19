@@ -27,7 +27,7 @@
     <version>c.v-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Promise</name>
-    <description>Promise Streaming Framework</description>
+    <description>Promise POC</description>
     <url>http://promise.assertdevelopments.org</url>
 
     <organization>
@@ -51,8 +51,6 @@
     </licenses>
 
     <modules>
-        <module>promise-jaxrs</module>
-        <module>promise-jaxrs-samples</module>
         <module>promise-poc</module>
         <module>promise-poc-samples</module>
     </modules>
