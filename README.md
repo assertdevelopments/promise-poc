@@ -102,6 +102,9 @@ Todo
 
 Todo
 
+## Half vs Full Duplex
+
+Todo
 
 # Samples
 
