@@ -28,7 +28,7 @@ mvn clean package
 
 Download and install WildFly 10.
 
-Deploy **promise-poc-samples-c.v-SNAPSHOT.war** to the Wild Fly application server.
+Deploy **promise-poc-c.v-SNAPSHOT.war** to the Wild Fly application server.
 
 Try to run the samples in **org.assertdevelopments.promise.poc.samples.client** package.
 
