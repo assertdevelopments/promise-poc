@@ -25,7 +25,7 @@ Run the following command:
 mvn clean package
 ```
 
-# Deployment & Testing
+# Deploying Samples
 
 Download and install WildFly 10.
 
