@@ -20,28 +20,20 @@ import org.apache.log4j.Logger;
 import org.assertdevelopments.promise.poc.client.StreamClient;
 import org.assertdevelopments.promise.poc.client.StreamRequest;
 import org.assertdevelopments.promise.poc.client.StreamResponse;
-import org.assertdevelopments.promise.poc.entities.objects.GenericEntity;
-import org.assertdevelopments.promise.poc.entities.serialization.EntityInputStream;
-import org.assertdevelopments.promise.poc.entities.serialization.GenericEntityInputStream;
-import org.assertdevelopments.promise.poc.entities.serialization.GenericEntityOutputStream;
-import org.assertdevelopments.promise.poc.samples.common.User;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 /**
  * @author Stefan Bangels
- * @since 2015-08-12
+ * @since 2015-02-03
  */
-public final class EntityTester {
+public final class ClientErrorTester {
 
-    private static final String URI = "/ws/entity";
+    private static final String URI = "/ws/client-error";
 
-    private static Logger logger = Logger.getLogger(EntityTester.class);
+    private static Logger logger = Logger.getLogger(ClientErrorTester.class);
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws IOException {
         StreamClient client = new StreamClient();
         try {
             long timer = System.currentTimeMillis();
@@ -49,35 +41,33 @@ public final class EntityTester {
             // create request
             StreamRequest request = new StreamRequest() {
                 public void writeEntity(OutputStream outputStream) throws IOException {
-                    GenericEntityOutputStream out = new GenericEntityOutputStream(outputStream);
-                    for (long n = 0; n < 1000; n++) {
-                        out.writeEntity(new GenericEntity()
-                                .setLong("id", n)
-                                .setString("name", "client-user-" + n)
-                        );
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+                    for (int n = 0; n < 100; n++) {
+                        writer.write("OUT: " + n + "\n");
+                        if (n == 50) {
+                            throw new RuntimeException("client side error!");
+                        }
                     }
-                    out.flush();
+                    writer.flush();
                 }
             };
 
             // execute request
-            int n = 0;
             StreamResponse response = new StreamClient().sendRequest(Constants.BASE_URL + URI, request);
             try {
-                GenericEntityInputStream in = new GenericEntityInputStream(response.getInputStream());
+                BufferedReader in = new BufferedReader(new InputStreamReader(response.getInputStream()));
                 while (true) {
-                    GenericEntity entity = in.readEntity();
-                    logger.info("IN: " + entity);
-                    if (entity == null) {
+                    String line = in.readLine();
+                    if (line == null) {
                         break;
                     }
-                    n++;
+                    logger.info("IN: " + line);
                 }
             } finally {
                 response.close();
             }
 
-            logger.info((System.currentTimeMillis() - timer) + "ms (" + n + " items)");
+            logger.info((System.currentTimeMillis() - timer) + "ms");
         } finally {
             client.close();
         }

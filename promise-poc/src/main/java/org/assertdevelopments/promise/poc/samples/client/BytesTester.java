@@ -16,10 +16,10 @@
 
 package org.assertdevelopments.promise.poc.samples.client;
 
+import org.apache.log4j.Logger;
 import org.assertdevelopments.promise.poc.client.StreamClient;
 import org.assertdevelopments.promise.poc.client.StreamRequest;
 import org.assertdevelopments.promise.poc.client.StreamResponse;
-import org.apache.log4j.Logger;
 
 import java.io.*;
 
@@ -27,11 +27,11 @@ import java.io.*;
  * @author Stefan Bangels
  * @since 2015-02-03
  */
-public final class ServerErrorTester {
+public final class BytesTester {
 
-    private static final String URI = "/ws/server-error";
+    private static final String URI = "/ws/bytes";
 
-    private static Logger logger = Logger.getLogger(ServerErrorTester.class);
+    private static Logger logger = Logger.getLogger(BytesTester.class);
 
     public static void main(String[] args) throws IOException {
         StreamClient client = new StreamClient();
@@ -50,7 +50,7 @@ public final class ServerErrorTester {
             };
 
             // execute request
-            StreamResponse response = new StreamClient().sendRequest(Constants.BASE_URL + URI, request);
+            StreamResponse response = client.sendRequest(Constants.BASE_URL + URI, request);
             try {
                 BufferedReader in = new BufferedReader(new InputStreamReader(response.getInputStream()));
                 while (true) {
