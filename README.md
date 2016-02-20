@@ -5,11 +5,10 @@ Welcome to Promise POC!
 Promise POC is a proof of concept for the Promise Framework (https://github.com/assertdevelopments/promise). Promise is a JAX-RS extension that allow you to stream large as well as small streams of data in a memory efficient, time optimized and controlled way.
 
 The goals of this proof of concept are:
-- prove that the solution works
-- assert that the framework goals are realistic
-- assert the RESTfulness of the solution
+- prove that the solution works and that the framework goals are realistic
+- test the RESTfulness of the solution
 - compare the differences between traditional JAX-RS serialization and the Promise Framework
-- detect difficulties and blocking issues early
+- identify problems and blocking issues
 
 Important Note: This proof of concept does not depend on JAX-RS. We chose to build a very low level POC (on top of servlets) so we can study the effects on the HTTP Protocol better.
 
