@@ -52,7 +52,6 @@
 
     <modules>
         <module>promise-poc</module>
-        <module>promise-poc-samples</module>
     </modules>
 
     <dependencies>

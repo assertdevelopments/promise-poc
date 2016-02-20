@@ -25,6 +25,7 @@
     <groupId>org.assertdevelopments</groupId>
     <artifactId>promise-poc</artifactId>
     <version>c.v-SNAPSHOT</version>
+    <packaging>war</packaging>
     <name>Promise POC</name>
     <description>Promise Streaming Framework POC</description>
     <url>http://promise.assertdevelopments.org</url>
