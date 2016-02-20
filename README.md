@@ -28,7 +28,7 @@ mvn clean package
 
 ## Stream Server
 
-The following code will create a stream handler. It will first read the request body from the input stream. When all data is received, it will write the response body to the output stream.
+The following code will create a stream server. When a client connects, it will first read the request body from the input stream. When all data is received, it will write the response body to the output stream.
 
 ``` java
 @WebServlet(name = "ExampleServlet", urlPatterns = "/example")
