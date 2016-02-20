@@ -22,6 +22,6 @@ package org.assertdevelopments.promise.poc.samples.client;
  */
 interface Constants {
 
-    String BASE_URL = "http://localhost:8080/promise-poc-samples-c.v-SNAPSHOT";
+    String BASE_URL = "http://localhost:8080/promise-poc-c.v-SNAPSHOT";
 
 }
