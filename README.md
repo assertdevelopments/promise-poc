@@ -2,14 +2,22 @@
 
 Welcome to Promise POC!
 
-With this experiment, we will try to expose a missed opportunity in the architecture of JAX-RS. We will discover why certain design decisions were made and why things were built the way they are.
+Promise POC is a proof of concept for the Promise HTTP Streaming Framework. Promise is a JAX-RS extension that allow you to stream large and small streams of data in a memory efficient, time optimized and controlled way.
 
-The results of this experiment will be summarised in an article that will form the foundations of Promise, a new framework that adds advanced streaming capabilities to JAX-RS. Its goal is to lower memory consumption and response time, for small as well as large streams of data.
+The goals of this proof of concept are:
+- prove that the solution works
+- assert that the framework goals are realistic
+- assert the RESTfulness of the solution
+- detect difficulties and blocking issues early
+- compare the differences between JAX-RS serialization and the Promise Framework
 
+Important Note: This proof of concept does not depend on JAX-RS. We chose to build a very low level POC (on top of servlets) so we can study the effects on the HTTP Protocol better.
+
+The results of this proof of concept will be bundled in an article and will be used as guidelines for building the Promise Framework.
 
 # Building
 
-To build this project, you will need Maven 3 (or higher) and JDK 1.6.
+To build this project, you will need Maven 3 (or higher) and JDK 1.8.
 
 Run the following command:
 
