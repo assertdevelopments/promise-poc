@@ -8,8 +8,8 @@ The goals of this proof of concept are:
 - prove that the solution works
 - assert that the framework goals are realistic
 - assert the RESTfulness of the solution
+- compare the differences between traditional JAX-RS serialization and the Promise Framework
 - detect difficulties and blocking issues early
-- compare the differences between JAX-RS serialization and the Promise Framework
 
 Important Note: This proof of concept does not depend on JAX-RS. We chose to build a very low level POC (on top of servlets) so we can study the effects on the HTTP Protocol better.
 
