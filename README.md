@@ -2,7 +2,7 @@
 
 Welcome to Promise POC!
 
-Promise POC is a proof of concept for the Promise Framework (https://github.com/assertdevelopments/promise). Promise is a JAX-RS extension that allow you to stream large as well as small streams of data in a memory efficient, time optimized and controlled way.
+Promise POC is a proof of concept for the Promise Framework (https://github.com/assertdevelopments/promise). Promise is a JAX-RS extension that allows you to stream large as well as small streams of data in a memory efficient, time optimized and controlled way.
 
 The goals of this proof of concept are:
 - prove that the solution works and that the framework goals are realistic
@@ -24,11 +24,93 @@ Run the following command:
 mvn clean package
 ```
 
-# Deploying Samples
+# Usage
+
+## Stream Server
+
+The following code will create a stream server. When a client connects, it will first read the request body from the input stream. When all data is received, it will write the response body to the output stream.
+
+``` java
+@WebServlet(name = "ExampleServlet", urlPatterns = "/example")
+public class ExampleStreamServlet extends AbstractStreamServlet {
+
+    @Override
+    protected StreamHandler getStreamHandler(String uri) {
+        return (httpMethod, stream) -> {
+            // read request
+            BufferedReader in = new BufferedReader(new InputStreamReader(stream.getInputStream()));
+            while (true) {
+                String line = in.readLine();
+                if (line == null) {
+                    break;
+                }
+                System.out.println(line);
+            }
+
+            // write response
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream.getOutputStream()));
+            for (int n = 0; n < 1000000; n++) {
+                writer.write("test-" + n + "\n");
+            }
+            writer.flush();
+        };
+    }
+
+}
+```
+
+## Stream Client
+
+The following code will create a stream client. It will connect to the stream server and write the request body to the output stream. After all data is sent, the server response is being read from the server. 
+
+``` java
+StreamClient client = new StreamClient();
+try {
+    StreamRequest request = outputStream -> {
+        // write request
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+        for (int n = 0; n < 1000000; n++) {
+            writer.write("test-" + n + "\n");
+        }
+        writer.flush();
+    };
+
+    StreamResponse response = client.sendRequest("http://localhost:8080/example", request);
+    try {
+        // read response
+        BufferedReader in = new BufferedReader(new InputStreamReader(response.getInputStream()));
+        while (true) {
+            String line = in.readLine();
+            if (line == null) {
+                break;
+            }
+            System.out.println(line);
+        }
+    } finally {
+        response.close();
+    }
+} finally {
+    client.close();
+}
+```
+
+## Error Handling
+
+Todo
+
+## Entities
+
+Todo
+
+## Half vs Full Duplex
+
+Todo
+
+# Samples
 
 Download and install WildFly 10.
 
-Deploy **promise-poc-samples-c.v-SNAPSHOT.war** to the Wild Fly application server.
+Deploy **promise-poc-c.v-SNAPSHOT.war** to the Wild Fly application server.
 
 Try to run the samples in **org.assertdevelopments.promise.poc.samples.client** package.
 
