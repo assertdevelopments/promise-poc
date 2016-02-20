@@ -32,7 +32,7 @@ The following code will create a stream server. When a client connects, it will 
 
 ``` java
 @WebServlet(name = "ExampleServlet", urlPatterns = "/example")
-public class ExampleServlet extends AbstractStreamServlet {
+public class ExampleStreamServlet extends AbstractStreamServlet {
 
     @Override
     protected StreamHandler getStreamHandler(String uri) {
