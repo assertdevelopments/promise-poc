@@ -17,39 +17,40 @@
 package org.assertdevelopments.promise.poc.samples.server;
 
 import org.apache.log4j.Logger;
-import org.assertdevelopments.promise.poc.entities.objects.GenericEntity;
-import org.assertdevelopments.promise.poc.entities.serialization.GenericEntityInputStream;
-import org.assertdevelopments.promise.poc.entities.serialization.GenericEntityOutputStream;
+import org.assertdevelopments.promise.poc.samples.common.User;
+import org.assertdevelopments.promise.poc.server.AbstractStreamServlet;
 import org.assertdevelopments.promise.poc.server.Stream;
-import org.assertdevelopments.promise.poc.server.StreamHandler;
+
+import javax.servlet.annotation.WebServlet;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 /**
  * @author Stefan Bangels
- * @since 19/02/16
+ * @since 2014-10-23
  */
-final class EntityStreamHandler implements StreamHandler {
+@WebServlet(name = "ObjectsStreamServlet", urlPatterns = "/ws/objects")
+public final class ObjectsStreamServlet extends AbstractStreamServlet {
 
     private final Logger logger = Logger.getLogger(getClass());
 
-    public void handleStream(String httpMethod, Stream stream) throws Throwable {
+    public void handleStreamRequest(Stream stream) throws Throwable {
         // read request
-        GenericEntityInputStream in = new GenericEntityInputStream(stream.getInputStream());
+        ObjectInputStream in = new ObjectInputStream(stream.getInputStream());
         while (true) {
-            GenericEntity entity = in.readEntity();
-            if (entity == null) {
+            Object genericEntity = in.readObject();
+            if (genericEntity == null) {
                 break;
             }
-            logger.debug("IN: " + entity);
+            logger.debug("IN: " + genericEntity);
         }
 
         // write response
-        GenericEntityOutputStream out = new GenericEntityOutputStream(stream.getOutputStream());
+        ObjectOutputStream out = new ObjectOutputStream(stream.getOutputStream());
         for (long n = 0; n < 500000; n++) {
-            out.writeEntity(new GenericEntity()
-                    .setLong("id", n)
-                    .setString("name", "server-user-" + n)
-            );
+            out.writeObject(new User(n, "server-user-" + n));
         }
+        out.writeObject(null);
         out.flush();
     }
 

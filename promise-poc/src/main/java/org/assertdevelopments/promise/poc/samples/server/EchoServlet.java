@@ -29,7 +29,7 @@ import java.io.OutputStream;
  * @author Stefan Bangels
  * @since 2015-06-08
  */
-@WebServlet(name="Echo Servlet", urlPatterns="/echo")
+@WebServlet(name = "Echo Servlet", urlPatterns = "/echo")
 public final class EchoServlet extends HttpServlet {
 
     @Override

@@ -16,11 +16,10 @@
 
 package org.assertdevelopments.promise.poc.server;
 
+import org.apache.log4j.Logger;
 import org.assertdevelopments.promise.poc.core.protocol.StreamConstants;
 import org.assertdevelopments.promise.poc.core.protocol.status.StreamStatus;
-import org.apache.log4j.Logger;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -39,47 +38,8 @@ public abstract class AbstractStreamServlet extends HttpServlet {
 
     private static final String SERVER = "Promise Server/1.0";
     private static final String DOWNLOAD_FILE_NAME = "data.stream";
-    private static final String FULL_DUPLEX_INIT_PARAMETER = "org.assertdevelopments.promise.fullDuplex";
 
     private final Logger logger = Logger.getLogger(getClass());
-
-    private boolean fullDuplex = false;
-
-    @Override
-    public void init(ServletConfig config) throws ServletException {
-        initFullDuplex(config);
-    }
-
-    /**
-     * Read the full duplex setting from the servlet configuration. This can be configured by passing the servlet init
-     * parameter "org.assertdevelopments.stream.fullDuplex" with value "true" or "false". If the full duplex parameter
-     * is set to "true", the servlet will support processing full duplex streams (reading and writing at the same time).
-     * If it is set to "false", the servlet will only support half duplex streams (read first, process next and write
-     * last). Please note that full duplex streams are experimental, since they are not supported by the current HTTP
-     * specifications (version 1.1).
-     *
-     * @param config the servlet configuration
-     * @see #isFullDuplex()
-     */
-    private void initFullDuplex(ServletConfig config) {
-        fullDuplex = "true".equals(config.getInitParameter(FULL_DUPLEX_INIT_PARAMETER));
-        if (fullDuplex) {
-            logger.warn("full duplex is enabled (experimental)");
-        }
-    }
-
-    /**
-     * Returns true if this servlet will support processing full duplex streams (reading and writing at the same time),
-     * or false when the servlet will only support half duplex streams (read first, process next and write last). This
-     * can be configured by passing the servlet init parameter "org.assertdevelopments.stream.fullDuplex" with value
-     * "true" or "false". Please note that full duplex streams are experimental, since they are not supported by the
-     * current HTTP specifications (version 1.1).
-     *
-     * @return true when full duplex stream support is enabled
-     */
-    private boolean isFullDuplex() {
-        return fullDuplex;
-    }
 
     @Override
     protected final void service(
@@ -100,17 +60,9 @@ public abstract class AbstractStreamServlet extends HttpServlet {
             response.setHeader("Pragma", "no-cache");
             response.setHeader("Expires", "0");
 
-            // find a stream handler for the uri
-            StreamHandler handler = getStreamHandler(uri);
-            if (handler == null) {
-                logger.warn("aborting, no stream handler found for uri: " + uri);
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
-
             // check content type
             String contentType = request.getContentType();
-            if (!StreamConstants.CONTENT_TYPE.equals(contentType)) {
+            if (contentType != null && !StreamConstants.CONTENT_TYPE.equals(contentType)) {
                 logger.warn("aborting, unsupported content type: " + contentType);
                 response.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
                 return;
@@ -129,7 +81,7 @@ public abstract class AbstractStreamServlet extends HttpServlet {
 
             // handle stream request
             logger.debug("handling stream request...");
-            handleRequest(request, response, handler);
+            handleRequest(request, response, uri);
 
             logger.info("processed stream request in " + (System.currentTimeMillis() - time) + "ms.");
         } catch (Throwable t) {
@@ -151,29 +103,32 @@ public abstract class AbstractStreamServlet extends HttpServlet {
     }
 
     /**
-     * Handle a request with the provided stream handler. This method will instantiate a half duplex or full duplex
-     * stream (depending on the servlet configuration), that wraps the request input stream and response output stream
-     * and passes it to the provided stream handler. The stream handler will read the request from the stream,
-     * process it and write the response back to the stream. After handling the stream, the stream will be finished,
-     * and a status code will be sent (success status when the stream is handled successfully, or error status if
-     * an exception has occurred while handling the stream).
+     * Handle a request with the provided stream handler. This method will instantiate a stream, that wraps the request
+     * input stream and response output stream and passes it to the provided stream handler. The stream handler will
+     * read the request from the stream, process it and write the response back to the stream. After handling the stream,
+     * the stream will be finished, and a status code will be sent (success status when the stream is handled
+     * successfully, or error status if an exception has occurred while handling the stream).
      *
      * @param request  the request
      * @param response the response
-     * @param handler  the stream handler
-     * @see StreamHandler
      * @see Stream
      */
     private void handleRequest(
-            HttpServletRequest request, HttpServletResponse response, StreamHandler handler) {
+            HttpServletRequest request, HttpServletResponse response, String uri) {
         try {
-            ClosableStream stream = createStream(request.getInputStream(), response.getOutputStream());
+            Stream stream = createStream(
+                    uri, request.getMethod(), request.getInputStream(), response.getOutputStream()
+            );
             try {
-                handler.handleStream(request.getMethod(), stream);
-                stream.finishSuccess();
+                handleStreamRequest(stream);
+                if (!stream.isCommitted()) {
+                    stream.sendSuccess();
+                }
             } catch (Throwable t) {
                 logger.error("error while handling stream", t);
-                stream.finishError(StreamStatus.STATUS_ERROR, t.getMessage());
+                if (!stream.isCommitted()) {
+                    stream.sendError(StreamStatus.STATUS_ERROR, t.getMessage());
+                }
             }
         } catch (Throwable t) {
             logger.error("an unexpected error has occurred", t);
@@ -181,31 +136,26 @@ public abstract class AbstractStreamServlet extends HttpServlet {
     }
 
     /**
-     * Instantiate a half duplex or full duplex stream (depending on the servlet configuration), and wrap it around
-     * the provided input- and output stream.
+     * Instantiate a stream for the provided uri and http method, and wrap it around the provided input- and output
+     * stream.
      *
+     * @param uri          the uri
+     * @param method       the http method
      * @param inputStream  the input stream
      * @param outputStream the output stream
      * @return the stream
-     * @see #isFullDuplex()
-     * @see ClosableStream
      */
-    private ClosableStream createStream(InputStream inputStream, OutputStream outputStream) {
-        if (isFullDuplex()) {
-            return new FullDuplexStream(inputStream, outputStream);
-        } else {
-            return new HalfDuplexStream(inputStream, outputStream);
-        }
+    private Stream createStream(String uri, String method, InputStream inputStream, OutputStream outputStream) {
+        return new StreamImpl(uri, method, inputStream, outputStream);
     }
 
     /**
-     * Get the stream handler for the provided URI (relative to the servlet).
+     * Process the provided stream request (read the stream input, process it and write the stream output). All
+     * exceptions thrown by this handler, will be included in the stream output status.
      *
-     * @param uri the URI (relative to the servlet)
-     * @return the stream handler
-     * @see StreamHandler
-     * @see #getRelativeURI(HttpServletRequest)
+     * @param stream the stream
+     * @see Stream
      */
-    protected abstract StreamHandler getStreamHandler(String uri);
+    protected abstract void handleStreamRequest(Stream stream) throws Throwable;
 
 }

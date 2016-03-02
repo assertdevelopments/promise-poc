@@ -52,6 +52,10 @@ public final class StreamClient {
         this.httpClient = HttpClients.createDefault();
     }
 
+    public StreamResponse sendRequest(String uri) {
+        return sendRequest(uri, null);
+    }
+
     public StreamResponse sendRequest(String uri, StreamRequest request) {
         logger.info("opening stream for " + uri + "...");
         try {
@@ -62,7 +66,9 @@ public final class StreamClient {
             httpMethod.setHeader("Cache-Control", "no-cache");
             httpMethod.setHeader("Pragma", "no-cache");
             httpMethod.setHeader("Expires", "0");
-            httpMethod.setEntity(new StreamRequestEntity(request));
+            if (request != null) {
+                httpMethod.setEntity(new StreamRequestEntity(request));
+            }
 
             logger.info("streaming request...");
             CloseableHttpResponse response = httpClient.execute(httpMethod);
