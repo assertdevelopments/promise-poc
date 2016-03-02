@@ -26,38 +26,34 @@ mvn clean package
 
 # Usage
 
-## Stream Server
+## Stream Servlet
 
-The following code will create a stream server. When a client connects, it will first read the request body from the input stream. When all data is received, it will write the response body to the output stream.
+The following code will create a stream servlet. When a client connects, the handleStreamRequest(Stream) method will be invoked.
 
 ``` java
-@WebServlet(name = "ExampleServlet", urlPatterns = "/example")
+@WebServlet(name = "ExampleStreamServlet", urlPatterns = "/example")
 public class ExampleStreamServlet extends AbstractStreamServlet {
 
     @Override
-    protected StreamHandler getStreamHandler(String uri) {
-        return (httpMethod, stream) -> {
-            // read request
-            BufferedReader in = new BufferedReader(new InputStreamReader(stream.getInputStream()));
-            while (true) {
-                String line = in.readLine();
-                if (line == null) {
-                    break;
-                }
-                System.out.println(line);
-            }
-
-            // write response
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream.getOutputStream()));
-            for (int n = 0; n < 1000000; n++) {
-                writer.write("test-" + n + "\n");
-            }
-            writer.flush();
-        };
+    public void handleStreamRequest(Stream stream) throws Throwable {
     }
 
 }
 ```
+
+The servlet can now read/write bytes from/to the stream, using the *stream.getInputStream()* and *stream.getOutputStream()* methods.
+
+What's the difference between an AbstractStreamServlet and a regular HttpServlet, you might wonder? HTTP/1.X requires you to write the Response status code (f.e. 200 "OK"), before sending the Response body. With a regular HttpServlet, you will be able to change your status code until your Response is committed (the outputstream is flushed for the first time or your outputstream buffer exceeds a certain amount of bytes). When trying to change the status code, after the response is committed, you will see the following error (log source WildFly):
+
+```
+12:33:50,463 ERROR [io.undertow.request] (default task-13) UT005023: Exception handling request to /example: java.lang.IllegalStateException: UT010019: Response already commited
+```
+
+When trying to write a very big body, you will always hit the buffer size. So you can no longer change the status code, after a certain amount of bytes. If an error occurs while writing the end of the body, the body will be corrupt, but status code 200 "OK" will still be returned.
+
+The AbstractStreamServlet will solve this problem, by wrapping the body in an envelope. This envelope will return the real status code (500 "An unexpected error has occurred"), after sending the body contents. This allows us to send very big Response bodies, while still doing error handling.
+
+When reading from the InputStream, the body will be read from the envelope and the real status code will be handled after receiving the body. 
 
 ## Stream Client
 
@@ -66,26 +62,11 @@ The following code will create a stream client. It will connect to the stream se
 ``` java
 StreamClient client = new StreamClient();
 try {
-    StreamRequest request = outputStream -> {
-        // write request
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-        for (int n = 0; n < 1000000; n++) {
-            writer.write("test-" + n + "\n");
-        }
-        writer.flush();
-    };
-
-    StreamResponse response = client.sendRequest("http://localhost:8080/example", request);
+    StreamResponse response = client.sendRequest(URI, outputStream -> {
+        // write Request Body to the outputStream...
+    });
     try {
-        // read response
-        BufferedReader in = new BufferedReader(new InputStreamReader(response.getInputStream()));
-        while (true) {
-            String line = in.readLine();
-            if (line == null) {
-                break;
-            }
-            System.out.println(line);
-        }
+        // read Response Body using response.getInputStream()...
     } finally {
         response.close();
     }
@@ -94,17 +75,7 @@ try {
 }
 ```
 
-## Error Handling
-
-Todo
-
-## Entities
-
-Todo
-
-## Half vs Full Duplex
-
-Todo
+The **StreamClient** will wrap the Request Body in an envelope, and will read the Response Body from the Response envelope.
 
 # Samples
 
